@@ -758,6 +758,10 @@ void Thing::explode()
 {
 	if (hasExploded == false)
 	{
+		for (int i = 0; i < mColliders.size(); i++)
+		{
+			mColliders[i] = { 0, 0, 0, 0 };
+		}
 		mDirection = UP;
 		mRotation = 0.0;
 		mVelX = 0;
@@ -769,9 +773,14 @@ void Thing::explode()
 		mFrameCounter = 0;
 		hasExploded = true;
 		currentTexture = explosionTexture;
+
 	}
 	else
 	{
+		for (int i = 0; i < mColliders.size(); i++)
+		{
+			mColliders[i] = { 0, 0, 0, 0 };
+		}
 		mClip.x += 100;
 	}
 }

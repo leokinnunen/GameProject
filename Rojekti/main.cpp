@@ -79,7 +79,7 @@ int main(int argc, char* args[])
 		allAsteroidColliders[0] = asteroids[0].getColliders();
 		Mix_PlayMusic(waltz, -1);
 
-		Mix_Volume(-1, 3);
+		Mix_Volume(-1, 5);
 
 		int frameCount = 0;
 		//Event handler
