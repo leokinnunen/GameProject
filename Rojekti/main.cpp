@@ -59,7 +59,7 @@ int main(int argc, char* args[])
 		backgroundDimensions.w = SCREEN_WIDTH;
 		backgroundDimensions.h = SCREEN_HEIGHT;
 		Uint32 timer;
-		SDL_Color textColor = {0, 0, 0};
+		SDL_Color textColor = { 0, 0, 0 };
 
 		OpeningScreen startScreen(&renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 		if (startScreen.start == false)
@@ -67,9 +67,9 @@ int main(int argc, char* args[])
 			quit = true;
 		}
 		Thing player(&renderer, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, UP, PLAYER);
-		
+
 		std::vector<std::vector<SDL_Rect>> allAsteroidColliders(MAX_ASTEROIDS);
-		std::vector<std::vector<SDL_Rect>> allColliders(MAX_ASTEROIDS+1);
+		std::vector<std::vector<SDL_Rect>> allColliders(MAX_ASTEROIDS + 1);
 		std::vector<Thing> asteroids(MAX_ASTEROIDS + 2, Thing(&renderer, (rand() % (SCREEN_WIDTH - 100)), 0, DOWN, ASTEROID));
 		int asteroidCount = 1;
 		asteroids[0] = Thing(&renderer, (rand() % (SCREEN_WIDTH - 100)), 0, DOWN, ASTEROID);;
@@ -79,7 +79,7 @@ int main(int argc, char* args[])
 		allAsteroidColliders[0] = asteroids[0].getColliders();
 		Mix_PlayMusic(waltz, -1);
 
-		Mix_Volume(-1, 5);
+		Mix_Volume(-1, 3);
 
 		int frameCount = 0;
 		//Event handler
@@ -110,7 +110,7 @@ int main(int argc, char* args[])
 
 			}
 			//Spawn asteroids every 60 frames
-			if (frameCount % 60 == 0 && frameCount != 0&&asteroidCount < MAX_ASTEROIDS)
+			if (frameCount % 60 == 0 && frameCount != 0 && asteroidCount < MAX_ASTEROIDS)
 			{
 				if (asteroidCount < MAX_ASTEROIDS)
 				{
@@ -127,7 +127,7 @@ int main(int argc, char* args[])
 							//random x, bottom of the screen
 							asteroids[asteroidCount] = Thing(&renderer, (rand() % (SCREEN_WIDTH - asteroids[0].THING_WIDTH)), (SCREEN_HEIGHT), UP, ASTEROID);
 							//Add size for this asteroids colliders
-							allAsteroidColliders.resize(allAsteroidColliders.size()+1);														
+							allAsteroidColliders.resize(allAsteroidColliders.size() + 1);
 							//put the asteroids colliders into the next free slots of allAsteroidColliders
 							allAsteroidColliders[asteroidCount] = asteroids[asteroidCount].getColliders();
 							asteroidCount++;
@@ -137,7 +137,7 @@ int main(int argc, char* args[])
 						else
 						{
 							//Random x, top of the screen
-							asteroids[asteroidCount] = Thing(&renderer, (rand() % (SCREEN_WIDTH - asteroids[0].THING_WIDTH)), 0-asteroids[0].THING_HEIGHT, DOWN, ASTEROID);
+							asteroids[asteroidCount] = Thing(&renderer, (rand() % (SCREEN_WIDTH - asteroids[0].THING_WIDTH)), 0 - asteroids[0].THING_HEIGHT, DOWN, ASTEROID);
 							//Add size for this asteroids colliders
 							allAsteroidColliders.resize(allAsteroidColliders.size() + 1);
 							//put the asteroids colliders into the next free slots of allAsteroidColliders
@@ -198,7 +198,7 @@ int main(int argc, char* args[])
 						else
 						{
 							//Random x, top of the screen
-							
+
 							asteroids[i].respawn(rand() % (rand() % (SCREEN_WIDTH - asteroids[0].THING_WIDTH)), 0 - asteroids[0].THING_HEIGHT, DOWN);
 
 						}
@@ -223,36 +223,36 @@ int main(int argc, char* args[])
 					asteroids[i].setSoundEffectPlaying(false);
 				}
 			}
-			
+
 
 			for (int i = 0; i < asteroidCount; i++)
 			{
 				allAsteroidColliders[i] = asteroids[i].getColliders();
 			}
-			
+
 
 
 			for (int set = 0; set < asteroidCount; ++set)
 			{
 				//Puts all the other colliders to allColliders
 				allColliders.resize(0);
-				allColliders.resize(asteroidCount+size_t(1));
+				allColliders.resize(asteroidCount + size_t(1));
 				allColliders[set] = player.getColliders();
-				
-				for (int i = 0; i < asteroidCount;i++)
+
+				for (int i = 0; i < asteroidCount; i++)
 				{
 					if (i != set)
 					{
 						allColliders[i + size_t(1)] = asteroids[i].getColliders();
 					}
 				}
-				
+
 
 				asteroids[set].move(allColliders);
 			}
 			//Update allAsteroidColliders
-			
-			
+
+
 
 
 
@@ -281,7 +281,7 @@ int main(int argc, char* args[])
 				{
 					asteroids[i].render(&explosionTexture);
 				}
-					
+
 			}
 
 			//Spaceship render
@@ -302,9 +302,9 @@ int main(int argc, char* args[])
 				{
 					currentHitboxAsteroid = allAsteroidColliders[set][i];
 					SDL_RenderFillRect(renderer, &currentHitboxAsteroid);
-				}		
+				}
 			}*/
-			
+
 			//Update screen
 
 			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
@@ -317,7 +317,7 @@ int main(int argc, char* args[])
 				!currentKeyStates[SDL_SCANCODE_UP] && !currentKeyStates[SDL_SCANCODE_DOWN] && !currentKeyStates[SDL_SCANCODE_LEFT] && !currentKeyStates[SDL_SCANCODE_RIGHT])
 			{
 				player.setSoundEffectPlaying(false);
-				player.respawn((SCREEN_WIDTH-player.THING_WIDTH) / 2, (SCREEN_HEIGHT - player.THING_HEIGHT)/ 2, UP);
+				player.respawn((SCREEN_WIDTH - player.THING_WIDTH) / 2, (SCREEN_HEIGHT - player.THING_HEIGHT) / 2, UP);
 				allAsteroidColliders.resize(0);
 				if (asteroidCount > highScore)
 				{
@@ -405,7 +405,7 @@ int main(int argc, char* args[])
 			frameTimer = SDL_GetTicks() - timer;
 			frameCount++;
 			fpsText.str("");
-			fpsText << "FPS" << (1000/(frameTimer));
+			fpsText << "FPS" << (1000 / (frameTimer));
 			fpsTextTexture.loadFromRenderedText(&renderer, &sansFont, fpsText.str().c_str(), textColor);
 			fpsTextTexture.render(&renderer, 0, 0);
 			SDL_RenderPresent(renderer);

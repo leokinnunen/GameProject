@@ -57,7 +57,7 @@ bool LTexture::loadFromFile(SDL_Renderer** renderer, std::string path)
 	return mTexture != NULL;
 }
 
-bool LTexture::loadFromRenderedText(SDL_Renderer** renderer, TTF_Font** font,std::string textureText, SDL_Color textColor)
+bool LTexture::loadFromRenderedText(SDL_Renderer** renderer, TTF_Font** font, std::string textureText, SDL_Color textColor)
 {
 	//Get rid of preexisting texture
 	free();
@@ -277,7 +277,7 @@ void closeAll(SDL_Renderer** renderer, SDL_Window** window)
 Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
 {
 
-	
+
 	mPosX = x;
 	mPosY = y;
 
@@ -285,7 +285,7 @@ Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
 	mSpawnPointY = y;
 
 	mType = type;
-	
+
 	mVelX = 0;
 	mVelY = 0;
 
@@ -307,7 +307,7 @@ Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
 	hasExploded = false;
 	if (type == ASTEROID)
 	{
-		THING_VEL = (2+ rand() % MAX_SPEED-1);
+		THING_VEL = (2 + rand() % MAX_SPEED - 1);
 		//Create the necessary SDL_Rects
 		mColliders.resize(3);
 
@@ -332,7 +332,7 @@ Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
 		}
 		mDirection = direction;
 
-		
+
 		asteroidTexture.loadFromFile(&thingRenderer, "Kuvat/Asteroid.png");
 		explosionTexture.loadFromFile(&thingRenderer, "Kuvat/ExplosionAnimation.png");
 		currentTexture = asteroidTexture;
@@ -355,7 +355,7 @@ Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
 
 		mRotation = 0.0;
 	}
-	else if(type==PLAYER)
+	else if (type == PLAYER)
 	{
 		THING_VEL = 10;
 		//Initialize the offsets
@@ -423,7 +423,7 @@ Thing::~Thing()
 	playerTexture.free();
 	asteroidTexture.free();
 	explosionTexture.free();
-	
+
 }
 
 void Thing::shiftColliders()
@@ -683,13 +683,13 @@ void Thing::move(std::vector< std::vector<SDL_Rect>> otherColliders)
 		//Move the dot left or right
 		mPosX += mVelX;
 		shiftColliders();
-		for (int i = 0; i < otherColliders.size();i++)
+		for (int i = 0; i < otherColliders.size(); i++)
 		{
 			//If the dot went too far to the left or right
 			if (checkCollision(mColliders, otherColliders[i]))
 			{
 				//Sitä varten, että molemmat räjähtää
-				mPosX += mVelX / (abs(mVelX)==0?abs(mVelX+1): abs(mVelX));
+				mPosX += mVelX / (abs(mVelX) == 0 ? abs(mVelX + 1) : abs(mVelX));
 				explode();
 			}
 			if ((mPosX + THING_WIDTH < 0) && !hasExploded)
@@ -697,7 +697,7 @@ void Thing::move(std::vector< std::vector<SDL_Rect>> otherColliders)
 				mPosX = SCREEN_WIDTH;
 				if (mType == ASTEROID)
 				{
-					mVelX = -2 + rand() % MAX_SPEED-1;
+					mVelX = -2 + rand() % MAX_SPEED - 1;
 				}
 			}
 			else if ((mPosX > SCREEN_WIDTH) && !hasExploded)
@@ -705,11 +705,11 @@ void Thing::move(std::vector< std::vector<SDL_Rect>> otherColliders)
 				mPosX = -THING_WIDTH;
 				if (mType == ASTEROID)
 				{
-					mVelX = 2 + rand() % MAX_SPEED-1;
+					mVelX = 2 + rand() % MAX_SPEED - 1;
 				}
 			}
 		}
-		
+
 		//Move the dot up or down
 		mPosY += mVelY;
 		shiftColliders();
@@ -727,7 +727,7 @@ void Thing::move(std::vector< std::vector<SDL_Rect>> otherColliders)
 				mPosY = SCREEN_HEIGHT;
 				if (mType == ASTEROID)
 				{
-					mVelY = -2 + rand() % MAX_SPEED-1;
+					mVelY = -2 + rand() % MAX_SPEED - 1;
 				}
 			}
 			else if ((mPosY > SCREEN_HEIGHT) && !hasExploded)
@@ -735,15 +735,15 @@ void Thing::move(std::vector< std::vector<SDL_Rect>> otherColliders)
 				mPosY = -THING_HEIGHT;
 				if (mType == ASTEROID)
 				{
-					mVelY = 2 + rand() % MAX_SPEED-1;
+					mVelY = 2 + rand() % MAX_SPEED - 1;
 				}
 			}
 		}
-		
+
 	}
 }
 
-void Thing::render( LTexture* texture)
+void Thing::render(LTexture* texture)
 {
 	//Show the dot
 	SDL_Rect destQuad;
@@ -758,10 +758,6 @@ void Thing::explode()
 {
 	if (hasExploded == false)
 	{
-		for (int i = 0; i < mColliders.size(); i++)
-		{
-			mColliders[i] = { 0, 0, 0, 0 };
-		}
 		mDirection = UP;
 		mRotation = 0.0;
 		mVelX = 0;
@@ -773,15 +769,18 @@ void Thing::explode()
 		mFrameCounter = 0;
 		hasExploded = true;
 		currentTexture = explosionTexture;
-
 	}
 	else
+	{
+		mClip.x += 100;
+	}
+	if (mClip.x >= 200)
 	{
 		for (int i = 0; i < mColliders.size(); i++)
 		{
 			mColliders[i] = { 0, 0, 0, 0 };
 		}
-		mClip.x += 100;
+		
 	}
 }
 
@@ -928,7 +927,7 @@ OpeningScreen::OpeningScreen(SDL_Renderer** renderer, const int screenWidth, con
 	bool startFlag = false;
 	//Event handler
 	SDL_Event e;
-	while (!quit&&!startFlag)
+	while (!quit && !startFlag)
 	{
 		while (SDL_PollEvent(&e) != 0)
 		{
@@ -944,7 +943,7 @@ OpeningScreen::OpeningScreen(SDL_Renderer** renderer, const int screenWidth, con
 		render(renderer);
 	}
 	start = startFlag;
-	
+
 }
 
 void OpeningScreen::render(SDL_Renderer** renderer)
@@ -953,9 +952,9 @@ void OpeningScreen::render(SDL_Renderer** renderer)
 	SDL_RenderClear(*renderer);
 	SDL_Rect backgroundDimensions{ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 	backgroundTexture.render(renderer, 0, 0, NULL, &backgroundDimensions);
-	gameNameTexture.render(renderer, (SCREEN_WIDTH - gameNameTexture.getWidth())/2, SCREEN_HEIGHT/2 - gameNameTexture.getHeight() - infoTexture.getHeight() - instructionTexture.getHeight());
+	gameNameTexture.render(renderer, (SCREEN_WIDTH - gameNameTexture.getWidth()) / 2, SCREEN_HEIGHT / 2 - gameNameTexture.getHeight() - infoTexture.getHeight() - instructionTexture.getHeight());
 	infoTexture.render(renderer, (SCREEN_WIDTH - infoTexture.getWidth()) / 2, SCREEN_HEIGHT / 2 - infoTexture.getHeight() - instructionTexture.getHeight());
 	instructionTexture.render(renderer, (SCREEN_WIDTH - instructionTexture.getWidth()) / 2, SCREEN_HEIGHT / 2 - instructionTexture.getHeight());
 	SDL_RenderPresent(*renderer);
-	
+
 }
