@@ -127,7 +127,6 @@ public:
 
 	void spawn(int x, int y, int direction);
 
-	void respawn(int x, int y, int direction);
 
 	LTexture playerTexture;
 	LTexture currentTexture;

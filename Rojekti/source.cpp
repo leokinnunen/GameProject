@@ -736,47 +736,6 @@ void Thing::spawn(int x, int y, int direction)
 	hasExploded = false;
 }
 
-void Thing::respawn(int x, int y, int direction)
-{
-	mPosX = x;
-	mPosY = y;
-
-	mVelX = 0;
-	mVelY = 0;
-
-	if (mType == PLAYER)
-	{
-		currentTexture = playerTexture;
-	}
-	else if (mType == ASTEROID)
-	{
-		mDirection = direction;
-		currentTexture = asteroidTexture;
-		switch (direction)
-		{
-		case(LEFT):
-			mVelX = -THING_VEL;
-			mRotation = -90.0;
-			break;
-		case(RIGHT):
-			mVelX = THING_VEL;
-			mRotation = 90.0;
-			break;
-		case(UP):
-			mVelY = -THING_VEL;
-			mRotation = 0.0;
-			break;
-		case(DOWN):
-			mVelY = THING_VEL;
-			mRotation = 180.0;
-			break;
-		}
-	}
-	mClip.x = 0;
-	hasExploded = false;
-
-}
-
 
 
 OpeningScreen::OpeningScreen(SDL_Renderer** renderer, const int screenWidth, const int screenHeight)

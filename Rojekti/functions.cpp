@@ -315,13 +315,13 @@ void checkAsteroidExplosion(std::vector<Thing> &asteroids, int asteroidCount, Mi
 				if (coinSide)
 				{
 					//random x, bottom of the screen
-					asteroids[i].respawn(rand() % (SCREEN_WIDTH - asteroids[0].THING_WIDTH), (SCREEN_HEIGHT), UP);
+					asteroids[i].spawn(rand() % (SCREEN_WIDTH - asteroids[0].THING_WIDTH), (SCREEN_HEIGHT), UP);
 				}
 				else
 				{
 					//Random x, top of the screen
 
-					asteroids[i].respawn((rand() % (SCREEN_WIDTH - asteroids[0].THING_WIDTH)), 0 - asteroids[0].THING_HEIGHT, DOWN);
+					asteroids[i].spawn((rand() % (SCREEN_WIDTH - asteroids[0].THING_WIDTH)), 0 - asteroids[0].THING_HEIGHT, DOWN);
 
 				}
 			}
@@ -331,13 +331,13 @@ void checkAsteroidExplosion(std::vector<Thing> &asteroids, int asteroidCount, Mi
 				{
 					//Right of the screen, random y 
 
-					asteroids[i].respawn(SCREEN_WIDTH, (rand() % (SCREEN_HEIGHT - asteroids[0].THING_HEIGHT)), LEFT);
+					asteroids[i].spawn(SCREEN_WIDTH, (rand() % (SCREEN_HEIGHT - asteroids[0].THING_HEIGHT)), LEFT);
 
 				}
 				else
 				{
 					//Left of the screen random y
-					asteroids[i].respawn(0 - asteroids[0].THING_WIDTH, (rand() % (SCREEN_HEIGHT - asteroids[0].THING_HEIGHT)), RIGHT);
+					asteroids[i].spawn(0 - asteroids[0].THING_WIDTH, (rand() % (SCREEN_HEIGHT - asteroids[0].THING_HEIGHT)), RIGHT);
 
 				}
 			}
@@ -368,7 +368,7 @@ void CheckPlayer(Thing& player, int &asteroidCount, int &highScore, Mix_Chunk* v
 		!currentKeyStates[SDL_SCANCODE_UP] && !currentKeyStates[SDL_SCANCODE_DOWN] && !currentKeyStates[SDL_SCANCODE_LEFT] && !currentKeyStates[SDL_SCANCODE_RIGHT])
 	{
 		player.setSoundEffectPlaying(false);
-		player.respawn((SCREEN_WIDTH - player.THING_WIDTH) / 2, (SCREEN_HEIGHT - player.THING_HEIGHT) / 2, UP);
+		player.spawn((SCREEN_WIDTH - player.THING_WIDTH) / 2, (SCREEN_HEIGHT - player.THING_HEIGHT) / 2, UP);
 
 		if (asteroidCount > highScore)
 		{
