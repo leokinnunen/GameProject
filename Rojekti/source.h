@@ -103,7 +103,7 @@ public:
 	void explode();
 
 	//Shows the Player on the screen
-	void render( LTexture* texture);
+	void render( LTexture &texture);
 
 	int getPosX();
 
@@ -244,3 +244,5 @@ void moveAsteroids(std::vector<Thing>& asteroids, int asteroidCount);
 void checkAsteroidExplosion(std::vector<Thing> &asteroids, int asteroidCount, Mix_Chunk *vineBoom);
 
 void CheckPlayer(Thing& player, int &asteroidCount, int &highScore, Mix_Chunk* vineBoom);
+
+void renderAsteroids(std::vector<Thing> &asteroids, int asteroidCount, LTexture &asteroidTexture, LTexture &explosionTexture);

@@ -377,3 +377,19 @@ void CheckPlayer(Thing& player, int &asteroidCount, int &highScore, Mix_Chunk* v
 		asteroidCount = 0;
 	}
 }
+
+void renderAsteroids(std::vector<Thing>& asteroids, int asteroidCount, LTexture& asteroidTexture, LTexture& explosionTexture)
+{
+	for (int i = 0; i < asteroidCount; i++)
+	{
+		if (!asteroids[i].getExploded())
+		{
+			asteroids[i].render(asteroidTexture);
+		}
+		else
+		{
+			asteroids[i].render(explosionTexture);
+		}
+			
+	}
+}

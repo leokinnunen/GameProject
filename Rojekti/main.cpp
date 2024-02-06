@@ -40,15 +40,10 @@ int main(int argc, char* args[])
 		LTexture playerTexture;
 		LTexture explosionTexture;
 		LTexture asteroidTexture;
-		LTexture fpsTextTexture;
-		LTexture asteroidTextTexture;
-		LTexture highScoreTextTexture;
-		TTF_Font* sansFont;
 		Mix_Music* waltz = NULL;
 		Mix_Chunk* vineBoom = NULL;
 		loadMusic(&waltz);
 		loadSoundEffect(&vineBoom);
-		loadFont(&sansFont);
 		backgroundTexture.loadFromFile(&renderer, "Kuvat/SpaceBackground.png");
 		playerTexture.loadFromFile(&renderer, "Kuvat/Spaceship.png");
 		explosionTexture.loadFromFile(&renderer, "Kuvat/ExplosionAnimation.png");
@@ -132,42 +127,10 @@ int main(int argc, char* args[])
 			backgroundTexture.render(&renderer, 0, 0, NULL, &backgroundDimensions);
 
 			//Asteroids render
-			//Mikä ihme tässä on ettei voi varastoida järkevästi noita textuureita
-			for (int i = 0; i < asteroidCount; i++)
-			{
-				if (!asteroids[i].getExploded())
-				{
-					asteroids[i].render(&asteroidTexture);
-				}
-				else
-				{
-					asteroids[i].render(&explosionTexture);
-				}
-
-			}
+			renderAsteroids(asteroids, asteroidCount, asteroidTexture, explosionTexture);
 
 			//Spaceship render
-			player.render(&player.currentTexture);
-
-			/*
-			SDL_Rect currentHitboxPlayer, currentHitboxAsteroid;
-			SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0xff, 0xff);
-			for (int set = 0; set < player.getColliders().size(); ++set)
-			{
-				currentHitboxPlayer = player.getColliders()[set];
-				SDL_RenderFillRect(renderer, &currentHitboxPlayer);
-			}
-
-			for (int i = 0; i < asteroidCount; i++)
-			{
-				for (int j = 0; j < asteroids[i].getColliders().size(); j++)
-				{
-					currentHitboxAsteroid = asteroids[i].getColliders()[j];
-					SDL_RenderFillRect(renderer, &currentHitboxAsteroid);
-				}
-				
-			}
-			*/
+			player.render(player.currentTexture);
 			
 			//Check if player exploded and restart the game
 			CheckPlayer(player, asteroidCount, highScore, vineBoom);

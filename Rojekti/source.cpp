@@ -605,7 +605,7 @@ void Thing::move()
 	}
 }
 
-void Thing::render(LTexture* texture)
+void Thing::render(LTexture &texture)
 {
 	//Show the dot
 	SDL_Rect destQuad;
@@ -613,7 +613,7 @@ void Thing::render(LTexture* texture)
 	destQuad.y = mPosY;
 	destQuad.w = THING_WIDTH;
 	destQuad.h = THING_HEIGHT;
-	texture->render(&thingRenderer, mPosX, mPosY, &mClip, &destQuad, getRotation());
+	texture.render(&thingRenderer, mPosX, mPosY, &mClip, &destQuad, getRotation());
 }
 
 void Thing::explode()
