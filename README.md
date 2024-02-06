@@ -1,6 +1,11 @@
 This game was made by Leo Kinnunen in 29.1.2024-3.2.2024
 Music and pixel art are made by Leo Kinnunen.
-The code is not perfect, especially considering the amount of stuff in the main function, but this game was finished in a hurry.
+
+Major bugfixes and cleaning up code done on 6.2.2024
+I will conitnue to update the game and add more features.
+
 You can download the game by downloading the Release.ZIP file from tags or releases. 
 Extract the file. The application file (Rojekti.exe) is in the folder.
-Ignore windows defender
+Ignore windows defender.
+
+You can also build the project using visual studio.
