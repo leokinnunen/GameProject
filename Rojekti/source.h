@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <time.h>
 
 
 class LTexture
@@ -97,7 +98,7 @@ public:
 	void handleEvent(SDL_Event& e);
 
 	//Moves the Player and checks collision
-	void move(std::vector<std::vector<SDL_Rect>> otherColliders);
+	void move();
 
 	void explode();
 
@@ -107,6 +108,8 @@ public:
 	int getPosX();
 
 	int getPosY();
+
+	int getDirection();
 
 	double getRotation();
 
@@ -121,6 +124,8 @@ public:
 	bool getSoundEffectPlaying();
 
 	void setSoundEffectPlaying(bool a);
+
+	void spawn(int x, int y, int direction);
 
 	void respawn(int x, int y, int direction);
 
@@ -194,6 +199,27 @@ public:
 	void render(SDL_Renderer** renderer);
 };
 
+class InGameUI
+{
+public:
+	InGameUI();
+
+	void assignText(int asteroidCount, int highScore, int fps);
+
+	void render(SDL_Renderer **renderer);
+
+	std::stringstream asteroidText;
+	std::stringstream highScoreText;
+	std::stringstream fpsText;
+
+	LTexture asteroidTextTexture;
+	LTexture highScoreTextTexture;
+	LTexture fpsTextTexture;
+
+	TTF_Font* sansFont;
+
+	SDL_Color textColor{0, 0, 0};
+};
 
 bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b);
 
@@ -206,3 +232,15 @@ bool loadFont(TTF_Font** font, int fontSize = 14);
 bool init(SDL_Renderer** renderer, SDL_Window** window, const int SCREEN_WIDTH, const int SCREEN_HEIGHT);
 
 void closeAll(SDL_Renderer** renderer, SDL_Window** window);
+
+void createAsteroidArray(SDL_Renderer** renderer, std::vector<Thing> asteroids);
+
+int spawnAsteroid(std::vector<Thing> &asteroids, int asteroidCount, int frameCount);
+
+void detectCollision(std::vector<Thing>& asteroids, Thing& player, int asteroidCount);
+
+void moveAsteroids(std::vector<Thing>& asteroids, int asteroidCount);
+
+void checkAsteroidExplosion(std::vector<Thing> &asteroids, int asteroidCount, Mix_Chunk *vineBoom);
+
+void CheckPlayer(Thing& player, int &asteroidCount, int &highScore, Mix_Chunk* vineBoom);

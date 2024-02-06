@@ -147,131 +147,7 @@ int LTexture::getHeight()
 	return mHeight;
 }
 
-bool init(SDL_Renderer** renderer, SDL_Window** window, const int SCREEN_WIDTH, const int SCREEN_HEIGHT)
-{
-	//Initialization flag
-	bool success = true;
 
-	//Initialize SDL
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
-	{
-		printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
-		success = false;
-	}
-	else
-	{
-		//Set texture filtering to linear
-		if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
-		{
-			printf("Warning: Linear texture filtering not enabled!");
-		}
-
-		//Create window
-		*window = SDL_CreateWindow("Asteroid Storm", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-		if (*window == NULL)
-		{
-			printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
-			success = false;
-		}
-		else
-		{
-			//Create renderer for window
-			*renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED);
-			if (*renderer == NULL)
-			{
-				printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
-				success = false;
-			}
-			else
-			{
-				//Initialize renderer color
-				SDL_SetRenderDrawColor(*renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-				//Initialize PNG loading
-				int imgFlags = IMG_INIT_PNG;
-				if (!(IMG_Init(imgFlags) & imgFlags))
-				{
-					printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-					success = false;
-				}
-
-				//Initialize SDL_ttf
-				if (TTF_Init() == -1)
-				{
-					printf("SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
-					success = false;
-				}
-
-				//Initialize SDL_Mixer
-				if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-				{
-					printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-					success = false;
-				}
-			}
-		}
-	}
-
-	return success;
-}
-
-bool loadMusic(Mix_Music** music)
-{
-	//Loading success flag
-	bool success = true;
-	//Load music
-	*music = Mix_LoadMUS("Kuvat/Waltz.mp3");
-	if (*music == NULL)
-	{
-		printf("Failed to load music! SDL_mixer Error: %s\n", Mix_GetError());
-		success = false;
-	}
-
-	return success;
-}
-
-bool loadSoundEffect(Mix_Chunk** chunk)
-{
-	//Loading success flag
-	bool success = true;
-	//Load music
-	*chunk = Mix_LoadWAV("Kuvat/vine_boom.wav");
-	if (*chunk == NULL)
-	{
-		printf("Failed to load music! SDL_mixer Error: %s\n", Mix_GetError());
-		success = false;
-	}
-
-	return success;
-}
-
-bool loadFont(TTF_Font** font, int fontSize)
-{
-	//Loading success flag
-	bool success = true;
-
-	//Open the font
-	*font = TTF_OpenFont("Kuvat/SansFont.ttf", fontSize);
-	if (*font == NULL)
-	{
-		printf("Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError());
-		success = false;
-	}
-	return success;
-}
-void closeAll(SDL_Renderer** renderer, SDL_Window** window)
-{
-	//Destroy window    
-	SDL_DestroyRenderer(*renderer);
-	SDL_DestroyWindow(*window);
-	*window = NULL;
-	*renderer = NULL;
-
-	//Quit SDL subsystems
-	Mix_Quit();
-	IMG_Quit();
-	SDL_Quit();
-}
 
 
 Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
@@ -654,7 +530,7 @@ std::vector<SDL_Rect>& Thing::getColliders()
 	return mColliders;
 }
 
-void Thing::move(std::vector< std::vector<SDL_Rect>> otherColliders)
+void Thing::move()
 {
 	if (hasExploded && mClip.x < 200)
 	{
@@ -678,67 +554,53 @@ void Thing::move(std::vector< std::vector<SDL_Rect>> otherColliders)
 	}
 	if (!hasExploded)
 	{
-
-
 		//Move the dot left or right
 		mPosX += mVelX;
 		shiftColliders();
-		for (int i = 0; i < otherColliders.size(); i++)
+		//If the dot went too far to the left or right
+		if ((mPosX + THING_WIDTH < 0) && !hasExploded)
 		{
-			//If the dot went too far to the left or right
-			if (checkCollision(mColliders, otherColliders[i]))
+			mPosX = SCREEN_WIDTH;
+			if (mType == ASTEROID)
 			{
-				//Sitä varten, että molemmat räjähtää
-				mPosX += mVelX / (abs(mVelX) == 0 ? abs(mVelX + 1) : abs(mVelX));
-				explode();
-			}
-			if ((mPosX + THING_WIDTH < 0) && !hasExploded)
-			{
-				mPosX = SCREEN_WIDTH;
-				if (mType == ASTEROID)
-				{
-					mVelX = -2 + rand() % MAX_SPEED - 1;
-				}
-			}
-			else if ((mPosX > SCREEN_WIDTH) && !hasExploded)
-			{
-				mPosX = -THING_WIDTH;
-				if (mType == ASTEROID)
-				{
-					mVelX = 2 + rand() % MAX_SPEED - 1;
-				}
+				srand(time(NULL));
+				mVelX = -2 + rand() % MAX_SPEED - 1;
 			}
 		}
+		else if ((mPosX > SCREEN_WIDTH) && !hasExploded)
+		{
+			mPosX = -THING_WIDTH;
+			if (mType == ASTEROID)
+			{
+				srand(time(NULL));
+				mVelX = 2 + rand() % MAX_SPEED - 1;
+			}
+		}
+		
 
 		//Move the dot up or down
 		mPosY += mVelY;
 		shiftColliders();
-		//If the dot went too far up or down
-		for (int i = 0; i < otherColliders.size(); i++)
+
+		if ((mPosY + THING_HEIGHT < 0) && !hasExploded)
 		{
-			if (checkCollision(mColliders, otherColliders[i]))
+			mPosY = SCREEN_HEIGHT;
+			if (mType == ASTEROID)
 			{
-				//Jotta molemmat räjähtää
-				mPosY += mVelY / (abs(mVelY) == 0 ? abs(mVelY + 1) : abs(mVelY));
-				explode();
-			}
-			if ((mPosY + THING_HEIGHT < 0) && !hasExploded)
-			{
-				mPosY = SCREEN_HEIGHT;
-				if (mType == ASTEROID)
-				{
-					mVelY = -2 + rand() % MAX_SPEED - 1;
-				}
-			}
-			else if ((mPosY > SCREEN_HEIGHT) && !hasExploded)
-			{
-				mPosY = -THING_HEIGHT;
-				if (mType == ASTEROID)
-				{
-					mVelY = 2 + rand() % MAX_SPEED - 1;
-				}
+				srand(time(NULL));
+				mVelY = -2 + rand() % MAX_SPEED - 1;
 			}
 		}
+		else if ((mPosY > SCREEN_HEIGHT) && !hasExploded)
+		{
+			mPosY = -THING_HEIGHT;
+			if (mType == ASTEROID)
+			{
+				srand(time(NULL));
+				mVelY = 2 + rand() % MAX_SPEED - 1;
+			}
+		}
+		
 
 	}
 }
@@ -794,6 +656,11 @@ int Thing::getPosY()
 	return mPosY;
 }
 
+int Thing::getDirection()
+{
+	return mDirection;
+}
+
 double Thing::getRotation()
 {
 	return mRotation;
@@ -827,6 +694,46 @@ bool Thing::getSoundEffectPlaying()
 void Thing::setSoundEffectPlaying(bool a)
 {
 	mPlayingSoundEffect = a;
+}
+
+void Thing::spawn(int x, int y, int direction)
+{
+	mPosX = x;
+	mPosY = y;
+
+	mVelX = 0;
+	mVelY = 0;
+
+	if (mType == PLAYER)
+	{
+		currentTexture = playerTexture;
+	}
+	else if (mType == ASTEROID)
+	{
+		mDirection = direction;
+		currentTexture = asteroidTexture;
+		switch (direction)
+		{
+		case(LEFT):
+			mVelX = -THING_VEL;
+			mRotation = -90.0;
+			break;
+		case(RIGHT):
+			mVelX = THING_VEL;
+			mRotation = 90.0;
+			break;
+		case(UP):
+			mVelY = -THING_VEL;
+			mRotation = 0.0;
+			break;
+		case(DOWN):
+			mVelY = THING_VEL;
+			mRotation = 180.0;
+			break;
+		}
+	}
+	mClip.x = 0;
+	hasExploded = false;
 }
 
 void Thing::respawn(int x, int y, int direction)
@@ -870,43 +777,7 @@ void Thing::respawn(int x, int y, int direction)
 
 }
 
-bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b)
-{
-	//The sides of the rectangles
-	int leftA, leftB;
-	int rightA, rightB;
-	int topA, topB;
-	int bottomA, bottomB;
 
-	//Go through the A boxes
-	for (int Abox = 0; Abox < a.size(); Abox++)
-	{
-		//Calculate the sides of rect A
-		leftA = a[Abox].x;
-		rightA = a[Abox].x + a[Abox].w;
-		topA = a[Abox].y;
-		bottomA = a[Abox].y + a[Abox].h;
-		//Go through the B boxes
-		for (int Bbox = 0; Bbox < b.size(); Bbox++)
-		{
-			//Calculate the sides of rect B
-			leftB = b[Bbox].x;
-			rightB = b[Bbox].x + b[Bbox].w;
-			topB = b[Bbox].y;
-			bottomB = b[Bbox].y + b[Bbox].h;
-
-			//If no sides from A are outside of B
-			if (((bottomA <= topB) || (topA >= bottomB) || (rightA <= leftB) || (leftA >= rightB)) == false)
-			{
-				//A collision is detected
-				return true;
-			}
-		}
-	}
-
-	//If neither set of collision boxes touched
-	return false;
-}
 
 OpeningScreen::OpeningScreen(SDL_Renderer** renderer, const int screenWidth, const int screenHeight)
 {
@@ -956,5 +827,36 @@ void OpeningScreen::render(SDL_Renderer** renderer)
 	infoTexture.render(renderer, (SCREEN_WIDTH - infoTexture.getWidth()) / 2, SCREEN_HEIGHT / 2 - infoTexture.getHeight() - instructionTexture.getHeight());
 	instructionTexture.render(renderer, (SCREEN_WIDTH - instructionTexture.getWidth()) / 2, SCREEN_HEIGHT / 2 - instructionTexture.getHeight());
 	SDL_RenderPresent(*renderer);
+}
 
+InGameUI::InGameUI()
+{
+	asteroidText.str("");
+	asteroidText << "Asteroids: "<<0;
+	highScoreText.str("");
+	highScoreText << "High Score: " << 0;
+	fpsText.str("");
+	fpsText << "FPS: "<<0;
+	loadFont(&sansFont, 14);
+}
+
+void InGameUI::assignText(int asteroidCount, int highScore, int fps)
+{
+	asteroidText.str("");
+	asteroidText << "Asteroids: " << asteroidCount;
+	highScoreText.str("");
+	highScoreText << "High Score: " << highScore;
+	fpsText.str("");
+	fpsText << "FPS: " << fps;
+}
+
+void InGameUI::render(SDL_Renderer ** renderer)
+{
+	asteroidTextTexture.loadFromRenderedText(renderer, &sansFont, asteroidText.str().c_str(), textColor);
+	highScoreTextTexture.loadFromRenderedText(renderer, &sansFont, highScoreText.str().c_str(), textColor);
+	fpsTextTexture.loadFromRenderedText(renderer, &sansFont, fpsText.str().c_str(), textColor);
+
+	fpsTextTexture.render(renderer, 0, 0);
+	asteroidTextTexture.render(renderer, 0, 14);
+	highScoreTextTexture.render(renderer, 0, 28);
 }
