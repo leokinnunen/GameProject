@@ -147,25 +147,19 @@ int LTexture::getHeight()
 	return mHeight;
 }
 
-
-
-
-Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
+Player::Player(SDL_Renderer** renderer, int x, int y, int direction)
 {
-
-
 	mPosX = x;
 	mPosY = y;
+
 
 	mSpawnPointX = x;
 	mSpawnPointY = y;
 
-	mType = type;
-
 	mVelX = 0;
 	mVelY = 0;
 
-	thingRenderer = *renderer;
+	playerRenderer = *renderer;
 
 	mPreviousPosX = x;
 	mPreviousPosY = y;
@@ -177,63 +171,13 @@ Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
 
 	mClip.x = 0;
 	mClip.y = 0;
-	mClip.w = THING_WIDTH;
-	mClip.h = THING_HEIGHT;
+	mClip.w = PLAYER_WIDTH;
+	mClip.h = PLAYER_HEIGHT;
 
 	hasExploded = false;
-	if (type == ASTEROID)
+	hasShot = false;
 	{
-		THING_VEL = (2 + rand() % MAX_SPEED - 1);
-		//Create the necessary SDL_Rects
-		mColliders.resize(3);
-
-		switch (direction)
-		{
-		case(LEFT):
-			mVelX = -THING_VEL;
-			mRotation = -90.0;
-			break;
-		case(RIGHT):
-			mVelX = THING_VEL;
-			mRotation = 90.0;
-			break;
-		case(UP):
-			mVelY = -THING_VEL;
-			mRotation = 0.0;
-			break;
-		case(DOWN):
-			mVelY = THING_VEL;
-			mRotation = 180.0;
-			break;
-		}
-		mDirection = direction;
-
-
-		asteroidTexture.loadFromFile(&thingRenderer, "Kuvat/Asteroid.png");
-		explosionTexture.loadFromFile(&thingRenderer, "Kuvat/ExplosionAnimation.png");
-		currentTexture = asteroidTexture;
-
-		mColliders[0].w = 48;
-		mColliders[0].h = 25;
-		mColliders[0].x = x + 23;
-		mColliders[0].y = y + 11;
-
-		mColliders[1].w = 51;
-		mColliders[1].h = 37;
-		mColliders[1].x = x + 33;
-		mColliders[1].y = y + 36;
-
-		mColliders[2].w = 38;
-		mColliders[2].h = 9;
-		mColliders[2].x = x + 44;
-		mColliders[2].y = y + 73;
-
-
-		mRotation = 0.0;
-	}
-	else if (type == PLAYER)
-	{
-		THING_VEL = 10;
+		PLAYER_VEL = 10;
 		//Initialize the offsets
 		mPosX = x;
 		mPosY = y;
@@ -243,8 +187,8 @@ Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
 		//Create the necessary SDL_Rects
 		mColliders.resize(5);
 
-		playerTexture.loadFromFile(&thingRenderer, "Kuvat/Spaceship.png");
-		explosionTexture.loadFromFile(&thingRenderer, "Kuvat/ExplosionAnimation.png");
+		playerTexture.loadFromFile(&playerRenderer, "Kuvat/Spaceship.png");
+		explosionTexture.loadFromFile(&playerRenderer, "Kuvat/ExplosionAnimation.png");
 		currentTexture = playerTexture;
 
 		mVelX = 0;
@@ -285,6 +229,483 @@ Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
 	}
 }
 
+Player::~Player()
+{
+	mPosX = 0;
+	mPosY = 0;
+	mPreviousPosX = 0;
+	mPreviousPosY = 0;
+	mColliders.resize(0);
+	mVelX = 0;
+	mVelY = 0;
+	mDirection = 0;
+	mFrameCounter = 0;
+	playerTexture.free();
+	explosionTexture.free();
+
+}
+
+void Player::handleEvent(SDL_Event& e)
+{
+	//If a key was pressed
+	if (e.type == SDL_KEYDOWN && e.key.repeat == 0)
+	{
+		//Adjust the velocity
+		switch (e.key.keysym.sym)
+		{
+		case SDLK_LEFT:
+			mVelX -= PLAYER_VEL;
+			mDirection = LEFT;
+			mRotation = -90.0;
+			break;
+		case SDLK_RIGHT:
+			mVelX += PLAYER_VEL;
+			mDirection = RIGHT;
+			mRotation = 90.0;
+			break;
+		case SDLK_UP:
+			mVelY -= PLAYER_VEL;
+			mDirection = UP;
+			mRotation = 0.0;
+			break;
+		case SDLK_DOWN:
+			mVelY += PLAYER_VEL;
+			mDirection = DOWN;
+			mRotation = 180.0;
+			break;
+		case SDLK_SPACE:
+			hasShot = true;
+			break;
+		}
+	}
+	else if (e.type == SDL_KEYUP && e.key.repeat == 0)
+	{
+		//Adjust the velocity
+		switch (e.key.keysym.sym)
+		{
+		case SDLK_LEFT:
+			mVelX += PLAYER_VEL;
+			if (mVelX > 0)
+			{
+				mDirection = RIGHT;
+				mRotation = 90.0;
+			}
+			else if (mVelY > 0)
+			{
+				mDirection = DOWN;
+				mRotation = 180.0;
+			}
+			else if (mVelY < 0)
+			{
+				mDirection = UP;
+				mRotation = 0;
+			}
+			break;
+		case SDLK_RIGHT:
+			mVelX -= PLAYER_VEL;
+			if (mVelX < 0)
+			{
+				mDirection = LEFT;
+				mRotation = -90.0;
+			}
+			else if (mVelY > 0)
+			{
+				mDirection = DOWN;
+				mRotation = 180.0;
+			}
+			else if (mVelY < 0)
+			{
+				mDirection = UP;
+				mRotation = 0;
+			}
+			break;
+		case SDLK_UP:
+			mVelY += PLAYER_VEL;
+			if (mVelY > 0)
+			{
+				mDirection = DOWN;
+				mRotation = 180.0;
+			}
+			else if (mVelX > 0)
+			{
+				mDirection = RIGHT;
+				mRotation = 90.0;
+			}
+			else if (mVelX < 0)
+			{
+				mDirection = LEFT;
+				mRotation = -90.0;
+			}
+			break;
+		case SDLK_DOWN:
+			mVelY -= PLAYER_VEL;
+			if (mVelY < 0)
+			{
+				mDirection = UP;
+				mRotation = 0.0;
+			}
+			else if (mVelX > 0)
+			{
+				mDirection = RIGHT;
+				mRotation = 90.0;
+			}
+			else if (mVelX < 0)
+			{
+				mDirection = LEFT;
+				mRotation = -90.0;
+			}
+			break;
+
+		}
+	}
+}
+
+void Player::shiftColliders()
+{
+	mColliders[0].w = 10;
+	mColliders[0].h = 11;
+	mColliders[0].x = mPreviousPosX + 25;
+	mColliders[0].y = mPreviousPosY + 23;
+
+	mColliders[1].w = 7;
+	mColliders[1].h = 5;
+	mColliders[1].x = mPreviousPosX + 64;
+	mColliders[1].y = mPreviousPosY + 29;
+
+	mColliders[2].w = 46;
+	mColliders[2].h = 6;
+	mColliders[2].x = mPreviousPosX + 25;
+	mColliders[2].y = mPreviousPosY + 34;
+
+	mColliders[3].w = 67;
+	mColliders[3].h = 19;
+	mColliders[3].x = mPreviousPosX + 17;
+	mColliders[3].y = mPreviousPosY + 40;
+
+	mColliders[4].w = 37;
+	mColliders[4].h = 6;
+	mColliders[4].x = mPreviousPosX + 30;
+	mColliders[4].y = mPreviousPosY + 59;
+
+	SDL_Rect newHitbox;
+	//Käännä Hitboxit oikein
+	if (mDirection == LEFT)
+	{
+		mRotation = -90.0;
+		for (int set = 0; set < mColliders.size(); ++set)
+		{
+			newHitbox.x = mPosX + mColliders[set].y - mPreviousPosY;
+			newHitbox.y = mPosY + PLAYER_WIDTH - (mColliders[set].x - mPreviousPosX) - mColliders[set].w;
+			newHitbox.w = mColliders[set].h;
+			newHitbox.h = mColliders[set].w;
+			mColliders[set].x = newHitbox.x;
+			mColliders[set].y = newHitbox.y;
+			mColliders[set].w = newHitbox.w;
+			mColliders[set].h = newHitbox.h;
+		}
+	}
+
+	else if (mDirection == RIGHT)
+	{
+		mRotation = 90.0;
+		for (int set = 0; set < mColliders.size(); ++set)
+		{
+			newHitbox.x = mPosX + PLAYER_HEIGHT - (mColliders[set].y - mPreviousPosY) - mColliders[set].h;
+			newHitbox.y = mPosY + mColliders[set].x - mPreviousPosX;
+			newHitbox.w = mColliders[set].h;
+			newHitbox.h = mColliders[set].w;
+			mColliders[set].x = newHitbox.x;
+			mColliders[set].y = newHitbox.y;
+			mColliders[set].w = newHitbox.w;
+			mColliders[set].h = newHitbox.h;
+		}
+	}
+
+	else if (mDirection == DOWN)
+	{
+		mRotation = 180.0;
+		for (int set = 0; set < mColliders.size(); ++set)
+		{
+			newHitbox.x = mPosX + PLAYER_WIDTH - (mColliders[set].x - mPreviousPosX) - mColliders[set].w;
+			newHitbox.y = mPosY + PLAYER_HEIGHT - (mColliders[set].y - mPreviousPosY) - mColliders[set].h;
+			newHitbox.w = mColliders[set].w;
+			newHitbox.h = mColliders[set].h;
+			mColliders[set].x = newHitbox.x;
+			mColliders[set].y = newHitbox.y;
+			mColliders[set].w = newHitbox.w;
+			mColliders[set].h = newHitbox.h;
+		}
+	}
+
+	else
+	{
+		mRotation = 0.0;
+		for (int set = 0; set < mColliders.size(); ++set)
+		{
+			mColliders[set].x = mPosX + mColliders[set].x - mPreviousPosX;
+			mColliders[set].y = mPosY + mColliders[set].y - mPreviousPosY;
+		}
+	}
+	mPreviousPosX = mPosX;
+	mPreviousPosY = mPosY;
+}
+
+void Player::move()
+{
+	if (hasExploded && mClip.x < 200)
+	{
+		if (mFrameCounter == 10)
+		{
+			explode();
+			mFrameCounter = 0;
+		}
+		else
+		{
+			mFrameCounter++;
+		}
+	}
+	else if (hasExploded && mClip.x == 200)
+	{
+		if (mFrameCounter++ == 30)
+		{
+			mFrameCounter = 0;
+			mClip.x += 100;
+		}
+	}
+	if (!hasExploded)
+	{
+		//Move the thing left or right
+		mPosX += mVelX;
+		shiftColliders();
+		//If the thing went too far to the left or right
+		if ((mPosX + PLAYER_WIDTH < 0) && !hasExploded)
+		{
+			mPosX = SCREEN_WIDTH;
+		}
+		else if ((mPosX > SCREEN_WIDTH) && !hasExploded)
+		{
+			mPosX = -PLAYER_WIDTH;
+		}
+
+
+		//Move the thing up or down
+		mPosY += mVelY;
+		shiftColliders();
+
+		if ((mPosY + PLAYER_HEIGHT < 0) && !hasExploded)
+		{
+			mPosY = SCREEN_HEIGHT;
+		}
+		else if ((mPosY > SCREEN_HEIGHT) && !hasExploded)
+		{
+			mPosY = -PLAYER_HEIGHT;
+		}
+
+
+	}
+}
+
+void Player::spawn(int x, int y, int direction)
+{
+	mPosX = x;
+	mPosY = y;
+
+	mVelX = 0;
+	mVelY = 0;
+
+	mDirection = direction;
+	currentTexture = playerTexture;
+	mClip.x = 0;
+	hasExploded = false;
+}
+
+void Player::explode()
+{
+	if (hasExploded == false)
+	{
+		mDirection = UP;
+		mRotation = 0.0;
+		mVelX = 0;
+		mVelY = 0;
+		mClip.w = 100;
+		mClip.h = 100;
+		mClip.x = 0;
+		mClip.y = 0;
+		mFrameCounter = 0;
+		hasExploded = true;
+		currentTexture = explosionTexture;
+	}
+	else
+	{
+		mClip.x += 100;
+	}
+	if (mClip.x >= 200)
+	{
+		for (int i = 0; i < mColliders.size(); i++)
+		{
+			mColliders[i] = { 0, 0, 0, 0 };
+		}
+
+	}
+}
+
+void Player::render(LTexture& texture)
+{
+	//Show the dot
+	SDL_Rect destQuad;
+	destQuad.x = mPosX;
+	destQuad.y = mPosY;
+	destQuad.w = PLAYER_WIDTH;
+	destQuad.h = PLAYER_HEIGHT;
+	texture.render(&playerRenderer, mPosX, mPosY, &mClip, &destQuad, getRotation());
+}
+
+int Player::getPosX()
+{
+	return mPosX;
+}
+
+int Player::getPosY()
+{
+	return mPosY;
+}
+
+int Player::getDirection()
+{
+	return mDirection;
+}
+
+double Player::getRotation()
+{
+	return mRotation;
+}
+
+bool Player::getExploded()
+{
+	return hasExploded;
+}
+
+bool Player::getHasShot()
+{
+	return hasShot;
+}
+
+void Player::setHasShot(bool a)
+{
+	hasShot = a;
+}
+
+SDL_Rect Player::getClip()
+{
+	return mClip;
+}
+
+int Player::getSpawnPointX()
+{
+	return mSpawnPointX;
+}
+
+int Player::getSpawnPointY()
+{
+	return mSpawnPointY;
+}
+
+bool Player::getSoundEffectPlaying()
+{
+	return mPlayingSoundEffect;
+}
+
+void Player::setSoundEffectPlaying(bool a)
+{
+	mPlayingSoundEffect = a;
+}
+
+std::vector<SDL_Rect>& Player::getColliders()
+{
+	return mColliders;
+}
+
+Thing::Thing(SDL_Renderer** renderer, int x, int y, int direction, int type)
+{
+
+	
+	mPosX = x;
+	mPosY = y;
+
+	mSpawnPointX = x;
+	mSpawnPointY = y;
+
+	mType = type;
+
+	mVelX = 0;
+	mVelY = 0;
+
+	thingRenderer = *renderer;
+
+	mPreviousPosX = x;
+	mPreviousPosY = y;
+
+	mRotation = 0.0;
+	mDirection = direction;
+
+	mPlayingSoundEffect = false;
+
+	mClip.x = 0;
+	mClip.y = 0;
+	mClip.w = THING_WIDTH;
+	mClip.h = THING_HEIGHT;
+
+	hasExploded = false;
+	
+	THING_VEL = (2 + rand() % MAX_SPEED - 1);
+	//Create the necessary SDL_Rects
+	mColliders.resize(3);
+
+	switch (direction)
+	{
+	case(LEFT):
+		mVelX = -THING_VEL;
+		mRotation = -90.0;
+		break;
+	case(RIGHT):
+		mVelX = THING_VEL;
+		mRotation = 90.0;
+		break;
+	case(UP):
+		mVelY = -THING_VEL;
+		mRotation = 0.0;
+		break;
+	case(DOWN):
+		mVelY = THING_VEL;
+		mRotation = 180.0;
+		break;
+	}
+	mDirection = direction;
+
+
+	asteroidTexture.loadFromFile(&thingRenderer, "Kuvat/Asteroid.png");
+	explosionTexture.loadFromFile(&thingRenderer, "Kuvat/ExplosionAnimation.png");
+	currentTexture = asteroidTexture;
+
+	mColliders[0].w = 48;
+	mColliders[0].h = 25;
+	mColliders[0].x = x + 23;
+	mColliders[0].y = y + 11;
+
+	mColliders[1].w = 51;
+	mColliders[1].h = 37;
+	mColliders[1].x = x + 33;
+	mColliders[1].y = y + 36;
+
+	mColliders[2].w = 38;
+	mColliders[2].h = 9;
+	mColliders[2].x = x + 44;
+	mColliders[2].y = y + 73;
+
+
+	mRotation = 0.0;
+}
+
 Thing::~Thing()
 {
 	mPosX = 0;
@@ -304,51 +725,23 @@ Thing::~Thing()
 
 void Thing::shiftColliders()
 {
-	if (mType == ASTEROID)
-	{
-		//First put the Colliders in the up position
-		mColliders[0].w = 48;
-		mColliders[0].h = 25;
-		mColliders[0].x = mPreviousPosX + 23;
-		mColliders[0].y = mPreviousPosY + 11;
 
-		mColliders[1].w = 51;
-		mColliders[1].h = 37;
-		mColliders[1].x = mPreviousPosX + 33;
-		mColliders[1].y = mPreviousPosY + 36;
+	//First put the Colliders in the up position
+	mColliders[0].w = 48;
+	mColliders[0].h = 25;
+	mColliders[0].x = mPreviousPosX + 23;
+	mColliders[0].y = mPreviousPosY + 11;
 
-		mColliders[2].w = 38;
-		mColliders[2].h = 9;
-		mColliders[2].x = mPreviousPosX + 44;
-		mColliders[2].y = mPreviousPosY + 73;
-	}
-	if (mType == PLAYER)
-	{
-		mColliders[0].w = 10;
-		mColliders[0].h = 11;
-		mColliders[0].x = mPreviousPosX + 25;
-		mColliders[0].y = mPreviousPosY + 23;
+	mColliders[1].w = 51;
+	mColliders[1].h = 37;
+	mColliders[1].x = mPreviousPosX + 33;
+	mColliders[1].y = mPreviousPosY + 36;
 
-		mColliders[1].w = 7;
-		mColliders[1].h = 5;
-		mColliders[1].x = mPreviousPosX + 64;
-		mColliders[1].y = mPreviousPosY + 29;
-
-		mColliders[2].w = 46;
-		mColliders[2].h = 6;
-		mColliders[2].x = mPreviousPosX + 25;
-		mColliders[2].y = mPreviousPosY + 34;
-
-		mColliders[3].w = 67;
-		mColliders[3].h = 19;
-		mColliders[3].x = mPreviousPosX + 17;
-		mColliders[3].y = mPreviousPosY + 40;
-
-		mColliders[4].w = 37;
-		mColliders[4].h = 6;
-		mColliders[4].x = mPreviousPosX + 30;
-		mColliders[4].y = mPreviousPosY + 59;
-	}
+	mColliders[2].w = 38;
+	mColliders[2].h = 9;
+	mColliders[2].x = mPreviousPosX + 44;
+	mColliders[2].y = mPreviousPosY + 73;
+	
 	SDL_Rect newHitbox;
 	//Käännä Hitboxit oikein
 	if (mDirection == LEFT)
@@ -412,118 +805,6 @@ void Thing::shiftColliders()
 	mPreviousPosY = mPosY;
 }
 
-void Thing::handleEvent(SDL_Event& e)
-{
-	//If a key was pressed
-	if (e.type == SDL_KEYDOWN && e.key.repeat == 0)
-	{
-		//Adjust the velocity
-		switch (e.key.keysym.sym)
-		{
-		case SDLK_LEFT:
-			mVelX -= THING_VEL;
-			mDirection = LEFT;
-			mRotation = -90.0;
-			break;
-		case SDLK_RIGHT:
-			mVelX += THING_VEL;
-			mDirection = RIGHT;
-			mRotation = 90.0;
-			break;
-		case SDLK_UP:
-			mVelY -= THING_VEL;
-			mDirection = UP;
-			mRotation = 0.0;
-			break;
-		case SDLK_DOWN:
-			mVelY += THING_VEL;
-			mDirection = DOWN;
-			mRotation = 180.0;
-			break;
-
-		}
-	}
-	else if (e.type == SDL_KEYUP && e.key.repeat == 0)
-	{
-		//Adjust the velocity
-		switch (e.key.keysym.sym)
-		{
-		case SDLK_LEFT:
-			mVelX += THING_VEL;
-			if (mVelX > 0)
-			{
-				mDirection = RIGHT;
-				mRotation = 90.0;
-			}
-			else if (mVelY > 0)
-			{
-				mDirection = DOWN;
-				mRotation = 180.0;
-			}
-			else if (mVelY < 0)
-			{
-				mDirection = UP;
-				mRotation = 0;
-			}
-			break;
-		case SDLK_RIGHT:
-			mVelX -= THING_VEL;
-			if (mVelX < 0)
-			{
-				mDirection = LEFT;
-				mRotation = -90.0;
-			}
-			else if (mVelY > 0)
-			{
-				mDirection = DOWN;
-				mRotation = 180.0;
-			}
-			else if (mVelY < 0)
-			{
-				mDirection = UP;
-				mRotation = 0;
-			}
-			break;
-		case SDLK_UP:
-			mVelY += THING_VEL;
-			if (mVelY > 0)
-			{
-				mDirection = DOWN;
-				mRotation = 180.0;
-			}
-			else if (mVelX > 0)
-			{
-				mDirection = RIGHT;
-				mRotation = 90.0;
-			}
-			else if (mVelX < 0)
-			{
-				mDirection = LEFT;
-				mRotation = -90.0;
-			}
-			break;
-		case SDLK_DOWN:
-			mVelY -= THING_VEL;
-			if (mVelY < 0)
-			{
-				mDirection = UP;
-				mRotation = 0.0;
-			}
-			else if (mVelX > 0)
-			{
-				mDirection = RIGHT;
-				mRotation = 90.0;
-			}
-			else if (mVelX < 0)
-			{
-				mDirection = LEFT;
-				mRotation = -90.0;
-			}
-			break;
-
-		}
-	}
-}
 
 std::vector<SDL_Rect>& Thing::getColliders()
 {
@@ -554,51 +835,47 @@ void Thing::move()
 	}
 	if (!hasExploded)
 	{
-		//Move the dot left or right
+		//Move the thing left or right
 		mPosX += mVelX;
 		shiftColliders();
-		//If the dot went too far to the left or right
+		//If the thing went too far to the left or right
 		if ((mPosX + THING_WIDTH < 0) && !hasExploded)
 		{
 			mPosX = SCREEN_WIDTH;
-			if (mType == ASTEROID)
-			{
-				srand(time(NULL));
-				mVelX = -2 + rand() % MAX_SPEED - 1;
-			}
+			
+			srand(time(NULL));
+			mVelX = -2 + rand() % MAX_SPEED - 1;
+
 		}
 		else if ((mPosX > SCREEN_WIDTH) && !hasExploded)
 		{
 			mPosX = -THING_WIDTH;
-			if (mType == ASTEROID)
-			{
-				srand(time(NULL));
-				mVelX = 2 + rand() % MAX_SPEED - 1;
-			}
+			
+			srand(time(NULL));
+			mVelX = 2 + rand() % MAX_SPEED - 1;
+			
 		}
 		
 
-		//Move the dot up or down
+		//Move the thing up or down
 		mPosY += mVelY;
 		shiftColliders();
 
 		if ((mPosY + THING_HEIGHT < 0) && !hasExploded)
 		{
 			mPosY = SCREEN_HEIGHT;
-			if (mType == ASTEROID)
-			{
-				srand(time(NULL));
-				mVelY = -2 + rand() % MAX_SPEED - 1;
-			}
+			
+			srand(time(NULL));
+			mVelY = -2 + rand() % MAX_SPEED - 1;
+			
 		}
 		else if ((mPosY > SCREEN_HEIGHT) && !hasExploded)
 		{
 			mPosY = -THING_HEIGHT;
-			if (mType == ASTEROID)
-			{
-				srand(time(NULL));
-				mVelY = 2 + rand() % MAX_SPEED - 1;
-			}
+			
+			srand(time(NULL));
+			mVelY = 2 + rand() % MAX_SPEED - 1;
+			
 		}
 		
 
@@ -704,39 +981,215 @@ void Thing::spawn(int x, int y, int direction)
 	mVelX = 0;
 	mVelY = 0;
 
-	if (mType == PLAYER)
+	mDirection = direction;
+	currentTexture = asteroidTexture;
+	switch (direction)
 	{
-		currentTexture = playerTexture;
-	}
-	else if (mType == ASTEROID)
-	{
-		mDirection = direction;
-		currentTexture = asteroidTexture;
-		switch (direction)
-		{
-		case(LEFT):
-			mVelX = -THING_VEL;
-			mRotation = -90.0;
-			break;
-		case(RIGHT):
-			mVelX = THING_VEL;
-			mRotation = 90.0;
-			break;
-		case(UP):
-			mVelY = -THING_VEL;
-			mRotation = 0.0;
-			break;
-		case(DOWN):
-			mVelY = THING_VEL;
-			mRotation = 180.0;
-			break;
-		}
+	case(LEFT):
+		mVelX = -THING_VEL;
+		mRotation = -90.0;
+		break;
+	case(RIGHT):
+		mVelX = THING_VEL;
+		mRotation = 90.0;
+		break;
+	case(UP):
+		mVelY = -THING_VEL;
+		mRotation = 0.0;
+		break;
+	case(DOWN):
+		mVelY = THING_VEL;
+		mRotation = 180.0;
+		break;
 	}
 	mClip.x = 0;
 	hasExploded = false;
 }
 
+Projectile::Projectile(SDL_Renderer** renderer)
+{
+	mProjectileX = 2*SCREEN_WIDTH;
+	mProjectileY = 0;
+	mPreviousProjectileX = mProjectileX;
+	mPreviousProjectileY = mProjectileY;
+	mProjectileVelX = 0;
+	mProjectileVelY = 0;
+	projectileTexture.loadFromFile(renderer, "Kuvat/laser.png");
+	mProjectileRotation = 0.0;
+	mProjectileColliders.w = 20;
+	mProjectileColliders.h = 70;
+	mProjectileColliders.x = mProjectileX + 23;
+	mProjectileColliders.y = mProjectileY + 25;
+	isAlive = false;
+}
 
+void Projectile::shiftColliders()
+{
+	//Käännä ensiksi hitboxit ylöspäin
+	mProjectileColliders.w = 20;
+	mProjectileColliders.h = 70;
+	mProjectileColliders.x = mPreviousProjectileX + 23;
+	mProjectileColliders.y = mPreviousProjectileY + 25;
+
+	SDL_Rect newHitbox;
+	//Käännä Hitboxit oikein
+	switch (mProjectileDirection)
+	{
+	case(LEFT):
+
+		mProjectileRotation = -90.0;
+		newHitbox.x = mProjectileX + (mProjectileColliders.y - mPreviousProjectileY);
+		newHitbox.y = mProjectileY - PROJECTILE_WIDTH + (mProjectileColliders.x - mPreviousProjectileX);
+		newHitbox.w = mProjectileColliders.h;
+		newHitbox.h = mProjectileColliders.w;
+		mProjectileColliders.x = newHitbox.x;
+		mProjectileColliders.y = newHitbox.y;
+		mProjectileColliders.w = newHitbox.w;
+		mProjectileColliders.h = newHitbox.h;
+		break;
+
+	case(RIGHT):
+	
+		mProjectileRotation = 90.0;
+		newHitbox.x = mProjectileX - PLAYER_WIDTH + (mProjectileColliders.y - mPreviousProjectileY);
+		newHitbox.y = mProjectileY + (mProjectileColliders.x - mPreviousProjectileX);
+		newHitbox.w = mProjectileColliders.h;
+		newHitbox.h = mProjectileColliders.w;
+		mProjectileColliders.x = newHitbox.x;
+		mProjectileColliders.y = newHitbox.y;
+		mProjectileColliders.w = newHitbox.w;
+		mProjectileColliders.h = newHitbox.h;
+		break;
+	
+
+	case(DOWN):
+	
+		mProjectileRotation = 180.0;
+		newHitbox.x = mProjectileX - PROJECTILE_WIDTH + (mProjectileColliders.y - mPreviousProjectileY) - 3; //We do a bit of offsettin' :DDDD
+		newHitbox.y = mProjectileY - PLAYER_WIDTH + (mProjectileColliders.x - mPreviousProjectileX) +2;
+		newHitbox.w = mProjectileColliders.w;
+		newHitbox.h = mProjectileColliders.h;
+		mProjectileColliders.x = newHitbox.x;
+		mProjectileColliders.y = newHitbox.y;
+		mProjectileColliders.w = newHitbox.w;
+		mProjectileColliders.h = newHitbox.h;
+		break;
+
+	case(UP):
+		mProjectileRotation = 0.0;
+		mProjectileColliders.x = mProjectileX + mProjectileColliders.x - mPreviousProjectileX;
+		mProjectileColliders.y = mProjectileY + mProjectileColliders.y - mPreviousProjectileY;
+		break;
+	}
+	
+	mPreviousProjectileX = mProjectileX;
+	mPreviousProjectileY = mProjectileY;
+}
+
+void Projectile::move()
+{
+	//Checks if we need to do anything. This doesn't cancel the lower if(!isAlive)
+	if (!isAlive)
+	{
+		mProjectileColliders.x = 2 * SCREEN_WIDTH; //Out of the screen
+		return;
+	}
+	mProjectileX += mProjectileVelX;
+	shiftColliders();
+	if (mProjectileX > SCREEN_WIDTH||mProjectileX < -projectileTexture.getWidth())
+	{
+		isAlive = false;
+	}
+	mProjectileY += mProjectileVelY;
+	shiftColliders();
+	if (mProjectileY > SCREEN_HEIGHT || mProjectileY < -projectileTexture.getHeight())
+	{
+		isAlive = false;
+	}
+	if (!isAlive)
+	{
+		mProjectileColliders.x = 2 * SCREEN_WIDTH; //Out of the screen
+	}
+}
+
+void Projectile::shoot(int x, int y, int direction)
+{
+	if (reloadTimer.isStarted() && reloadTimer.getTicks() < reloadTime)
+	{
+		return;
+	}
+	isAlive = true;
+
+	
+	mPreviousProjectileX = mProjectileX;
+	mPreviousProjectileY = mProjectileY;
+	mProjectileVelX = 0;
+	mProjectileVelY = 0;
+	shiftColliders();
+	switch (direction)
+	{
+	case(UP):
+		mProjectileVelY = -PROJECTILE_VEL;
+		mProjectileDirection = UP;
+		mProjectileRotation = 0.0;
+		//OFFSET
+		mProjectileX = x - 3;
+		mProjectileY = y - 2;
+		break;
+			
+	case(DOWN):
+		mProjectileVelY = PROJECTILE_VEL;
+		mProjectileDirection = DOWN;
+		mProjectileRotation = 180.0;
+		mProjectileX = x + 3 + PLAYER_HEIGHT;
+		mProjectileY = y + 2 + PLAYER_WIDTH;
+		break;
+	case(LEFT):
+		mProjectileVelX = -PROJECTILE_VEL;
+		mProjectileDirection = LEFT;
+		mProjectileRotation = -90.0;
+		mProjectileX = x - 2;
+		mProjectileY = y + 3+ PLAYER_WIDTH;
+		break;
+	case(RIGHT):
+		mProjectileVelX = PROJECTILE_VEL;
+		mProjectileDirection = RIGHT;
+		mProjectileRotation = 90.0;
+		mProjectileX = x + 2 + PLAYER_WIDTH;
+		mProjectileY = y - 3;
+		break;
+	}
+	reloadTimer.start();
+}
+
+SDL_Rect Projectile::getColliders()
+{
+	return mProjectileColliders;
+}
+
+int Projectile::getProjectileX()
+{
+	return mProjectileX;
+}
+
+int Projectile::getProjectileY()
+{
+	return mProjectileY;
+}
+
+double Projectile::getProjectileRotation()
+{
+	return mProjectileRotation;
+}
+
+bool Projectile::getAlive()
+{
+	return isAlive;
+}
+void Projectile::setAlive(bool a)
+{
+	isAlive = a;
+}
 
 OpeningScreen::OpeningScreen(SDL_Renderer** renderer, const int screenWidth, const int screenHeight)
 {
@@ -745,7 +1198,7 @@ OpeningScreen::OpeningScreen(SDL_Renderer** renderer, const int screenWidth, con
 	SCREEN_HEIGHT = screenHeight;
 	gameNameText = "Asteroid Storm";
 	infoText = "Game, music and pixel art by Leo Kinnunen";
-	instructionText = "Dodge the asteroids. Press space to start!";
+	instructionText = "Dodge the asteroids, shoot by pressing space. Press space to start!";
 	backgroundTexture.loadFromFile(renderer, "Kuvat/SpaceBackground.png");
 	backgroundTexture.setAlpha(0xaa);
 	loadFont(&sansFont, 40);
@@ -819,3 +1272,102 @@ void InGameUI::render(SDL_Renderer ** renderer)
 	asteroidTextTexture.render(renderer, 0, 14);
 	highScoreTextTexture.render(renderer, 0, 28);
 }
+
+Timer::Timer()
+{
+	mStartTicks = 0;
+	mPausedTicks = 0;
+
+	mPaused = false;
+	mStarted = false;
+}
+
+void Timer::start()
+{
+	mStarted = true;
+	mPaused = false;
+
+	//Get the current clock time
+	mStartTicks = SDL_GetTicks();
+	mPausedTicks = 0;
+}
+
+void Timer::stop()
+{
+	//Stop the timer
+	mStarted = false;
+
+	//Unpause the timer
+	mPaused = false;
+
+	//Clear tick variables
+	mStartTicks = 0;
+	mPausedTicks = 0;
+}
+
+void Timer::pause()
+{
+	//If the timer is running and isn't already paused
+	if (mStarted && !mPaused)
+	{
+		//Pause the timer
+		mPaused = true;
+
+		//Calculate the paused ticks
+		mPausedTicks = SDL_GetTicks() - mStartTicks;
+		mStartTicks = 0;
+	}
+}
+
+void Timer::unpause()
+{
+	//If the timer is running and paused
+	if (mStarted && mPaused)
+	{
+		//Unpause the timer
+		mPaused = false;
+
+		//Reset the starting ticks
+		mStartTicks = SDL_GetTicks() - mPausedTicks;
+
+		//Reset the paused ticks
+		mPausedTicks = 0;
+	}
+}
+
+Uint32 Timer::getTicks()
+{
+	//The actual timer time
+	Uint32 time = 0;
+
+	//If the timer is running
+	if (mStarted)
+	{
+		//If the timer is paused
+		if (mPaused)
+		{
+			//Return the number of ticks when the timer was paused
+			time = mPausedTicks;
+		}
+		else
+		{
+			//Return the current time minus the start time
+			time = SDL_GetTicks() - mStartTicks;
+		}
+	}
+
+	return time;
+}
+
+bool Timer::isStarted()
+{
+	//Timer is running and paused or unpaused
+	return mStarted;
+}
+
+bool Timer::isPaused()
+{
+	//Timer is running and paused
+	return mPaused && mStarted;
+}
+

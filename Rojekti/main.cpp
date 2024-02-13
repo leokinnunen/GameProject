@@ -62,7 +62,9 @@ int main(int argc, char* args[])
 		{
 			quit = true;
 		}
-		Thing player(&renderer, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, UP, PLAYER);
+		Player player(&renderer, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, UP);
+		Projectile laser(&renderer);
+		
 		Thing asteroid(&renderer, 0, 0, DOWN, ASTEROID);
 		std::vector<std::vector<SDL_Rect>> allAsteroidColliders(MAX_ASTEROIDS);
 		std::vector<std::vector<SDL_Rect>> allColliders(MAX_ASTEROIDS + 1);
@@ -70,7 +72,7 @@ int main(int argc, char* args[])
 		std::vector<Thing> asteroids(MAX_ASTEROIDS + 2, Thing(&renderer, 0, 0, DOWN, ASTEROID));
 
 		createAsteroidArray(&renderer, asteroids);
-
+		Mix_VolumeMusic(64);
 		Mix_PlayMusic(waltz, -1);
 
 		Mix_Volume(-1, 3);
@@ -113,8 +115,9 @@ int main(int argc, char* args[])
 
 			moveAsteroids(asteroids, asteroidCount);
 			player.move();
+			shootingHandler(player, laser);
 
-			detectCollision(asteroids, player, asteroidCount);
+			detectCollision(asteroids, player, laser, asteroidCount);
 
 			checkAsteroidExplosion(asteroids, asteroidCount, vineBoom);
 			//Clear screen
@@ -131,11 +134,11 @@ int main(int argc, char* args[])
 
 			//Spaceship render
 			player.render(player.currentTexture);
+			renderMoveLaser(player, laser);
 			
 			//Check if player exploded and restart the game
 			CheckPlayer(player, asteroidCount, highScore, vineBoom);
 
-;
 			frameTimer = SDL_GetTicks() - timer;
 			if (frameTimer < FRAME_TIME)
 			{

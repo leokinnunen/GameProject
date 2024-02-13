@@ -253,16 +253,29 @@ void moveAsteroids(std::vector<Thing>& asteroids, int asteroidCount)
 	}
 }
 
-void detectCollision(std::vector<Thing> &asteroids, Thing &player, int asteroidCount)
+void detectCollision(std::vector<Thing> &asteroids, Player &player, Projectile &laser, int asteroidCount)
 {
 	//Check if player hits asteroids
 	for (int i = 0; i < asteroidCount; i++)
 	{
-		if (!asteroids[i].getExploded()&&checkCollision(asteroids[i].getColliders(), player.getColliders()))
+		if (!asteroids[i].getExploded() && !player.getExploded() && checkCollision(asteroids[i].getColliders(), player.getColliders()))
 		{
 			asteroids[i].explode();
 			player.explode();
 
+		}
+	}
+	for (int i = 0; i < asteroidCount; i++)
+	{
+		std::vector<SDL_Rect> a;
+		a.resize(1);
+		a[0] = laser.getColliders();
+		if (!asteroids[i].getExploded() && checkCollision(asteroids[i].getColliders(), a))
+		{
+			asteroids[i].explode();
+			laser.setAlive(false);
+			//Moves it outside the screen
+			laser.move();
 		}
 	}
 	for (int i = 0; i < asteroidCount; i++)
@@ -309,7 +322,7 @@ void checkAsteroidExplosion(std::vector<Thing> &asteroids, int asteroidCount, Mi
 			coinAxis = rand() % 2;
 			//Spawns on bottom or up, left or right side
 			coinSide = rand() % 2;
-
+			asteroids[i].setSoundEffectPlaying(false);
 			if (coinAxis)
 			{
 				if (coinSide)
@@ -347,7 +360,7 @@ void checkAsteroidExplosion(std::vector<Thing> &asteroids, int asteroidCount, Mi
 }
 
 //Explodes player and restarts the game
-void CheckPlayer(Thing& player, int &asteroidCount, int &highScore, Mix_Chunk* vineBoom)
+void CheckPlayer(Player& player, int &asteroidCount, int &highScore, Mix_Chunk* vineBoom)
 {
 	enum
 	{
@@ -368,13 +381,44 @@ void CheckPlayer(Thing& player, int &asteroidCount, int &highScore, Mix_Chunk* v
 		!currentKeyStates[SDL_SCANCODE_UP] && !currentKeyStates[SDL_SCANCODE_DOWN] && !currentKeyStates[SDL_SCANCODE_LEFT] && !currentKeyStates[SDL_SCANCODE_RIGHT])
 	{
 		player.setSoundEffectPlaying(false);
-		player.spawn((SCREEN_WIDTH - player.THING_WIDTH) / 2, (SCREEN_HEIGHT - player.THING_HEIGHT) / 2, UP);
+		player.spawn((SCREEN_WIDTH - player.PLAYER_WIDTH) / 2, (SCREEN_HEIGHT - player.PLAYER_HEIGHT) / 2, UP);
 
 		if (asteroidCount > highScore)
 		{
 			highScore = asteroidCount;
 		}
 		asteroidCount = 0;
+	}
+}
+
+void renderMoveLaser( Player& player, Projectile &laser)
+{
+	if (laser.getAlive())
+	{
+		laser.move();
+		SDL_Rect destQuad;
+		destQuad.x = laser.getProjectileX();
+		destQuad.y = laser.getProjectileY();
+		destQuad.w = laser.projectileTexture.getWidth();
+		destQuad.h = laser.projectileTexture.getHeight();
+		SDL_Point topLeft;
+		topLeft.x = 0;
+		topLeft.y = 0;
+		laser.projectileTexture.render(&(player.playerRenderer), laser.getProjectileX(), laser.getProjectileY(), NULL, &destQuad, laser.getProjectileRotation(), &topLeft);
+		
+	}
+}
+
+void shootingHandler(Player& player, Projectile& laser)
+{
+	if (!player.getHasShot())
+	{
+		return;
+	}
+	else
+	{
+		laser.shoot(player.getPosX(), player.getPosY(), player.getDirection());
+		player.setHasShot(false);
 	}
 }
 
